@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FLOORSTOCK - Offline Version</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    /* Simple plus icon for buttons */
+    .icon-plus::before {
+      content: "+";
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+    /* Button hover effect */
+    button:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+  <div class="max-w-6xl mx-auto bg-white rounded-lg shadow p-6">
+    <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">FLOORSTOCK (Offline)</h1>
+
+    <div class="mb-6">
+      <label for="searchBarang" class="block mb-2 font-semibold text-gray-700">Cari Nama Barang:</label>
+      <input
+        type="text"
+        id="searchBarang"
+        placeholder="Cari nama barang..."
+        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:space-x-6">
+      <div class="flex-1 mb-4 md:mb-0">
+        <label for="kelompokSelect" class="block mb-2 font-semibold text-gray-700">Pilih Kelompok Barang:</label>
+        <select
+          id="kelompokSelect"
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="" disabled selected>-- Pilih Kelompok --</option>
+        </select>
+      </div>
+      <div class="flex-1">
+        <button
+          id="addKelompokBtn"
+          class="mt-6 md:mt-0 bg-green-600 text-white px-4 py-2 rounded w-full md:w-auto flex items-center justify-center icon-plus"
+          type="button"
+          aria-label="Tambah Kelompok"
+        >
+          Tambah Kelompok
+        </button>
+      </div>
+    </div>
+
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:space-x-6">
+      <div class="flex-1 mb-4 md:mb-0">
+        <label for="addBarangSelect" class="block mb-2 font-semibold text-gray-700">Pilih Kelompok untuk Tambah Barang:</label>
+        <select
+          id="addBarangSelect"
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="" disabled selected>-- Pilih Kelompok --</option>
+        </select>
+      </div>
+      <div class="flex-1">
+        <button
+          id="addBarangBtn"
+          class="mt-6 md:mt-0 bg-green-600 text-white px-4 py-2 rounded w-full md:w-auto flex items-center justify-center icon-plus"
+          type="button"
+          aria-label="Tambah Barang"
+        >
+          Tambah Barang
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <nav class="mb-4 border-b border-gray-300">
+        <button
+          id="tabTransaksi"
+          class="px-4 py-2 font-semibold text-blue-600 border-b-2 border-blue-600 focus:outline-none"
+          type="button"
+        >
+          Transaksi
+        </button>
+        <button
+          id="tabRiwayat"
+          class="px-4 py-2 font-semibold text-gray-600 hover:text-blue-600 focus:outline-none"
+          type="button"
+        >
+          Riwayat
+        </button>
+      </nav>
+
+      <div id="tabContent" aria-live="polite" aria-atomic="true">
+        <!-- Konten tab akan muncul di sini -->
+      </div>
+    </div>
+
+    <div id="message" class="mt-6 text-center text-green-600 font-semibold" role="alert" aria-live="assertive"></div>
+  </div>
+
+  <!-- Modal Tambah Kelompok -->
+  <div id="modalKelompok" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="modalKelompokTitle">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-96">
+      <h3 id="modalKelompokTitle" class="text-xl font-semibold mb-4">Tambah Kelompok Barang</h3>
+      <input
+        type="text"
+        id="newKelompokName"
+        placeholder="Nama kelompok baru"
+        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+        aria-label="Nama kelompok baru"
+      />
+      <div class="flex justify-end space-x-4">
+        <button id="cancelKelompokBtn" class="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100">Batal</button>
+        <button id="saveKelompokBtn" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Barang -->
+  <div id="modalBarang" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="modalBarangTitle">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-96">
+      <h3 id="modalBarangTitle" class="text-xl font-semibold mb-4">Tambah Barang Baru</h3>
+      <label for="newBarangName" class="block mb-2 font-semibold text-gray-700">Nama Barang:</label>
+      <input
+        type="text"
+        id="newBarangName"
+        placeholder="Nama barang baru"
+        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+        aria-label="Nama barang baru"
+      />
+      <label for="newBarangKelompok" class="block mb-2 font-semibold text-gray-700">Kelompok:</label>
+      <select
+        id="newBarangKelompok"
+        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+        aria-label="Kelompok barang baru"
+      >
+        <option value="" disabled selected>-- Pilih Kelompok --</option>
+      </select>
+      <div class="flex justify-end space-x-4">
+        <button id="cancelBarangBtn" class="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100">Batal</button>
+        <button id="saveBarangBtn" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Load data from localStorage or initialize default
+    let data = JSON.parse(localStorage.getItem("floorstockData")) || [
+      {
+        kelompok: "Elektronik",
+        barang: [
+          { id: 1, nama: "Laptop", saldo: 0 },
+          { id: 2, nama: "Smartphone", saldo: 0 }
+        ]
+      },
+      {
+        kelompok: "Alat Tulis",
+        barang: [
+          { id: 3, nama: "Pulpen", saldo: 0 },
+          { id: 4, nama: "Buku Tulis", saldo: 0 }
+        ]
+      }
+    ];
+
+    // Load riwayat transaksi from localStorage or initialize empty
+    const riwayatTransaksi = JSON.parse(localStorage.getItem("floorstockRiwayat")) || [];
+
+    let nextBarangId = (function() {
+      let maxId = 0;
+      data.forEach(kelompokData => {
+        kelompokData.barang.forEach(item => {
+          if (item.id > maxId) maxId = item.id;
+        });
+      });
+      return maxId + 1;
+    })();
+
+    const kelompokSelect = document.getElementById("kelompokSelect");
+    const addKelompokBtn = document.getElementById("addKelompokBtn");
+    const addBarangBtn = document.getElementById("addBarangBtn");
+    const addBarangSelect = document.getElementById("addBarangSelect");
+    const tabTransaksiBtn = document.getElementById("tabTransaksi");
+    const tabRiwayatBtn = document.getElementById("tabRiwayat");
+    const tabContent = document.getElementById("tabContent");
+    const message = document.getElementById("message");
+    const searchBarang = document.getElementById("searchBarang");
+
+    // Modal elements
+    const modalKelompok = document.getElementById("modalKelompok");
+    const newKelompokName = document.getElementById("newKelompokName");
+    const cancelKelompokBtn = document.getElementById("cancelKelompokBtn");
+    const saveKelompokBtn = document.getElementById("saveKelompokBtn");
+
+    const modalBarang = document.getElementById("modalBarang");
+    const newBarangName = document.getElementById("newBarangName");
+    const newBarangKelompok = document.getElementById("newBarangKelompok");
+    const cancelBarangBtn = document.getElementById("cancelBarangBtn");
+    const saveBarangBtn = document.getElementById("saveBarangBtn");
+
+    // Save data to localStorage
+    function saveData() {
+      localStorage.setItem("floorstockData", JSON.stringify(data));
+    }
+
+    // Save riwayat to localStorage
+    function saveRiwayat() {
+      localStorage.setItem("floorstockRiwayat", JSON.stringify(riwayatTransaksi));
+    }
+
+    // Populate dropdown kelompok
+    function populateKelompok() {
+      // Clear existing options
+      kelompokSelect.innerHTML = '<option value="" disabled selected>-- Pilih Kelompok --</option>';
+      addBarangSelect.innerHTML = '<option value="" disabled selected>-- Pilih Kelompok --</option>';
+      newBarangKelompok.innerHTML = '<option value="" disabled selected>-- Pilih Kelompok --</option>';
+
+      data.forEach(kelompokData => {
+        const option1 = document.createElement("option");
+        option1.value = kelompokData.kelompok;
+        option1.textContent = kelompokData.kelompok;
+        kelompokSelect.appendChild(option1);
+
+        const option2 = document.createElement("option");
+        option2.value = kelompokData.kelompok;
+        option2.textContent = kelompokData.kelompok;
+        addBarangSelect.appendChild(option2);
+
+        const option3 = document.createElement("option");
+        option3.value = kelompokData.kelompok;
+        option3.textContent = kelompokData.kelompok;
+        newBarangKelompok.appendChild(option3);
+      });
+    }
+
+    // Create item row for transaksi tab with clickable name to show riwayat
+    function createItemRow(item) {
+      const row = document.createElement("div");
+      row.className = "grid grid-cols-6 gap-4 items-center border-b border-gray-200 py-2";
+
+      const nameDiv = document.createElement("div");
+      nameDiv.textContent = item.nama;
+      nameDiv.className = "font-medium text-gray-800 cursor-pointer hover:text-blue-600";
+      nameDiv.title = "Klik untuk lihat riwayat barang ini";
+      nameDiv.addEventListener("click", () => {
+        showRiwayatForItem(item);
+      });
+
+      const saldoDiv = document.createElement("div");
+      saldoDiv.textContent = item.saldo;
+      saldoDiv.className = "text-center text-gray-700";
+      saldoDiv.id = `saldo-${item.id}`;
+
+      const tanggalInput = document.createElement("input");
+      tanggalInput.type = "date";
+      tanggalInput.className = "border border-gray-300 rounded px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-blue-400";
+      tanggalInput.id = `tanggal-${item.id}`;
+      // Default to today
+      const today = new Date().toISOString().split("T")[0];
+      tanggalInput.value = today;
+
+      const masukInput = document.createElement("input");
+      masukInput.type = "number";
+      masukInput.min = 0;
+      masukInput.value = 0;
+      masukInput.className = "border border-gray-300 rounded px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-blue-400";
+      masukInput.id = `masuk-${item.id}`;
+
+      const keluarInput = document.createElement("input");
+      keluarInput.type = "number";
+      keluarInput.min = 0;
+      keluarInput.value = 0;
+      keluarInput.className = "border border-gray-300 rounded px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-blue-400";
+      keluarInput.id = `keluar-${item.id}`;
+
+      // Update saldo on input change
+      function updateSaldo() {
+        const masuk = parseInt(masukInput.value) || 0;
+        const keluar = parseInt(keluarInput.value) || 0;
+        const saldoAkhir = item.saldo + masuk - keluar;
+        saldoDiv.textContent = saldoAkhir >= 0 ? saldoAkhir : 0;
+      }
+
+      masukInput.addEventListener("input", updateSaldo);
+      keluarInput.addEventListener("input", updateSaldo);
+
+      row.appendChild(nameDiv);
+      row.appendChild(saldoDiv);
+      row.appendChild(tanggalInput);
+      row.appendChild(masukInput);
+      row.appendChild(keluarInput);
+
+      return row;
+    }
+
+    // Show riwayat for a specific item in a modal or below transaksi tab
+    function showRiwayatForItem(item) {
+      // Create or reuse a container below transaksi tab to show riwayat
+      let riwayatContainer = document.getElementById("riwayatForItemContainer");
+      if (!riwayatContainer) {
+        riwayatContainer = document.createElement("div");
+        riwayatContainer.id = "riwayatForItemContainer";
+        riwayatContainer.className = "mt-6 p-4 border border-gray-300 rounded bg-gray-50";
+        tabContent.appendChild(riwayatContainer);
+      }
+      // Filter riwayat for this item
+      const filteredRiwayat = riwayatTransaksi.filter(t => t.id === item.id);
+      if (filteredRiwayat.length === 0) {
+        riwayatContainer.innerHTML = `<p class="text-gray-600">Belum ada riwayat transaksi untuk barang <strong>${item.nama}</strong>.</p>`;
+        return;
+      }
+
+      let html = `<h3 class="text-lg font-semibold mb-2">Riwayat Transaksi: ${item.nama}</h3>`;
+      html += `<table class="w-full border border-gray-300 rounded">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="border border-gray-300 px-3 py-2 text-center">Tanggal</th>
+            <th class="border border-gray-300 px-3 py-2 text-center">Barang Masuk</th>
+            <th class="border border-gray-300 px-3 py-2 text-center">Barang Keluar</th>
+            <th class="border border-gray-300 px-3 py-2 text-center">Saldo Akhir</th>
+            <th class="border border-gray-300 px-3 py-2 text-left">Pencatat</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+      filteredRiwayat.forEach(t => {
+        html += `<tr>
+          <td class="border border-gray-300 px-3 py-1 text-center">${t.tanggal}</td>
+          <td class="border border-gray-300 px-3 py-1 text-center">${t.masuk}</td>
+          <td class="border border-gray-300 px-3 py-1 text-center">${t.keluar}</td>
+          <td class="border border-gray-300 px-3 py-1 text-center">${t.saldoAkhir}</td>
+          <td class="border border-gray-300 px-3 py-1">${t.pencatat}</td>
+        </tr>`;
+      });
+
+      html += `</tbody></table>`;
+
+      // Add export button
+      html += `<button id="exportRiwayatBtn" class="mt-4 bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 transition-colors" type="button">Export ke Excel (CSV)</button>`;
+
+      riwayatContainer.innerHTML = html;
+
+      // Add event listener for export button
+      const exportBtn = document.getElementById("exportRiwayatBtn");
+      exportBtn.addEventListener("click", () => exportToCSV(filteredRiwayat));
+    }
+
+    // Export riwayat to CSV file
+    function exportToCSV(data) {
+      if (!data || data.length === 0) {
+        alert("Tidak ada data untuk diekspor.");
+        return;
+      }
+      const headers = ["Tanggal", "Barang Masuk", "Barang Keluar", "Saldo Akhir", "Pencatat"];
+      const rows = data.map(t => [
+        t.tanggal,
+        t.masuk,
+        t.keluar,
+        t.saldoAkhir,
+        t.pencatat
+      ]);
+
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += headers.join(",") + "\r\n";
+      rows.forEach(row => {
+        csvContent += row.map(field => `"${field}"`).join(",") + "\r\n";
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `riwayat_${data[0].nama.replace(/\s+/g, "_")}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Render transaksi tab content
+    function renderTransaksi(filteredBarang) {
+      tabContent.innerHTML = "";
+      if (!filteredBarang || filteredBarang.length === 0) {
+        tabContent.innerHTML = '<p class="text-center text-gray-500">Tidak ada barang yang sesuai pencarian.</p>';
+        return;
+      }
+
+      const headerRow = document.createElement("div");
+      headerRow.className = "grid grid-cols-6 gap-4 font-semibold text-gray-700 border-b border-gray-300 pb-1 mb-2 bg-gradient-to-r from-blue-100 to-blue-200 rounded-t";
+      headerRow.innerHTML = `
+        <div>Nama Barang</div>
+        <div class="text-center">Saldo</div>
+        <div class="text-center">Tanggal</div>
+        <div class="text-center">Barang Masuk</div>
+        <div class="text-center">Barang Keluar</div>
+      `;
+      tabContent.appendChild(headerRow);
+
+      filteredBarang.forEach(item => {
+        const itemRow = createItemRow(item);
+        tabContent.appendChild(itemRow);
+      });
+
+      const recorderNameDiv = document.createElement("div");
+      recorderNameDiv.className = "mt-6";
+      recorderNameDiv.innerHTML = `
+        <label for="recorderName" class="block mb-2 font-semibold text-gray-700">Nama Pencatat:</label>
+        <input
+          type="text"
+          id="recorderName"
+          name="recorderName"
+          placeholder="Masukkan nama pencatat"
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+      `;
+      tabContent.appendChild(recorderNameDiv);
+
+      const saveBtn = document.createElement("button");
+      saveBtn.textContent = "Simpan Transaksi";
+      saveBtn.className = "mt-4 bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition-colors";
+      saveBtn.type = "button";
+      saveBtn.addEventListener("click", () => saveTransaksi(filteredBarang));
+      tabContent.appendChild(saveBtn);
+    }
+
+    // Save transaksi for filtered barang
+    function saveTransaksi(filteredBarang) {
+      const recorderNameInput = document.getElementById("recorderName");
+      if (!recorderNameInput) {
+        alert("Nama pencatat tidak ditemukan.");
+        return;
+      }
+      const recorderName = recorderNameInput.value.trim();
+      if (!recorderName) {
+        alert("Mohon masukkan nama pencatat.");
+        return;
+      }
+
+      filteredBarang.forEach(item => {
+        const masuk = parseInt(document.getElementById(`masuk-${item.id}`).value) || 0;
+        const keluar = parseInt(document.getElementById(`keluar-${item.id}`).value) || 0;
+        const tanggal = document.getElementById(`tanggal-${item.id}`).value || new Date().toISOString().split("T")[0];
+        const saldoAkhir = item.saldo + masuk - keluar >= 0 ? item.saldo + masuk - keluar : 0;
+
+        // Update saldo awal barang in data
+        const kelompokData = data.find(k => k.kelompok === item.kelompok);
+        if (kelompokData) {
+          const barangData = kelompokData.barang.find(b => b.id === item.id);
+          if (barangData) {
+            barangData.saldo = saldoAkhir;
+          }
+        }
+
+        // Update saldo in filteredBarang
+        item.saldo = saldoAkhir;
+
+        // Simpan ke riwayat transaksi
+        if (masuk > 0 || keluar > 0) {
+          riwayatTransaksi.push({
+            id: item.id,
+            nama: item.nama,
+            kelompok: item.kelompok,
+            tanggal,
+            masuk,
+            keluar,
+            saldoAkhir,
+            pencatat: recorderName
+          });
+        }
+
+        // Reset input
+        document.getElementById(`masuk-${item.id}`).value = 0;
+        document.getElementById(`keluar-${item.id}`).value = 0;
+        document.getElementById(`tanggal-${item.id}`).value = new Date().toISOString().split("T")[0];
+        document.getElementById(`saldo-${item.id}`).textContent = saldoAkhir;
+      });
+
+      message.textContent = `Transaksi berhasil disimpan oleh ${recorderName}.`;
+
+      // Save data and riwayat to localStorage
+      saveData();
+      saveRiwayat();
+
+      // Refresh riwayat tab if active
+      if (tabRiwayatBtn.classList.contains("border-blue-600")) {
+        renderRiwayat(searchBarang.value.trim().toLowerCase());
+      }
+    }
+
+    // Render riwayat tab content filtered by searchBarang
+    function renderRiwayat(searchTerm) {
+      tabContent.innerHTML = "";
+
+      const filteredRiwayat = riwayatTransaksi.filter(t =>
+        t.nama.toLowerCase().includes(searchTerm)
+      );
+
+      if (filteredRiwayat.length === 0) {
+        tabContent.innerHTML = '<p class="text-center text-gray-500">Belum ada riwayat transaksi yang sesuai pencarian.</p>';
+        return;
+      }
+
+      const table = document.createElement("table");
+      table.className = "w-full border border-gray-300 rounded";
+
+      const thead = document.createElement("thead");
+      thead.className = "bg-gray-100";
+      thead.innerHTML = `
+        <tr>
+          <th class="border border-gray-300 px-3 py-2 text-left">Nama Barang</th>
+          <th class="border border-gray-300 px-3 py-2 text-center">Saldo Akhir</th>
+          <th class="border border-gray-300 px-3 py-2 text-center">Tanggal</th>
+          <th class="border border-gray-300 px-3 py-2 text-center">Barang Masuk</th>
+          <th class="border border-gray-300 px-3 py-2 text-center">Barang Keluar</th>
+          <th class="border border-gray-300 px-3 py-2 text-left">Pencatat</th>
+        </tr>
+      `;
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      filteredRiwayat.forEach(t => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="border border-gray-300 px-3 py-1">${t.nama}</td>
+          <td class="border border-gray-300 px-3 py-1 text-center">${t.saldoAkhir}</td>
+          <td class="border border-gray-300 px-3 py-1 text-center">${t.tanggal}</td>
+          <td class="border border-gray-300 px-3 py-1 text-center">${t.masuk}</td>
+          <td class="border border-gray-300 px-3 py-1 text-center">${t.keluar}</td>
+          <td class="border border-gray-300 px-3 py-1">${t.pencatat}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      tabContent.appendChild(table);
+
+      // Export button
+      const exportBtn = document.createElement("button");
+      exportBtn.textContent = "Export ke Excel (CSV)";
+      exportBtn.className = "mt-4 bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 transition-colors";
+      exportBtn.type = "button";
+      exportBtn.addEventListener("click", () => exportToCSV(filteredRiwayat));
+      tabContent.appendChild(exportBtn);
+    }
+
+    // Search input event listener
+    searchBarang.addEventListener("input", () => {
+      const searchTerm = searchBarang.value.trim().toLowerCase();
+
+      // Find all barang matching search term across all kelompok
+      let matchedBarang = [];
+      data.forEach(kelompokData => {
+        kelompokData.barang.forEach(item => {
+          if (item.nama.toLowerCase().includes(searchTerm)) {
+            matchedBarang.push({...item, kelompok: kelompokData.kelompok});
+          }
+        });
+      });
+
+      if (tabTransaksiBtn.classList.contains("border-blue-600")) {
+        renderTransaksi(matchedBarang);
+      } else {
+        renderRiwayat(searchTerm);
+      }
+    });
+
+    // Event listeners untuk tab
+    tabTransaksiBtn.addEventListener("click", () => {
+      tabTransaksiBtn.classList.add("text-blue-600", "border-blue-600");
+      tabTransaksiBtn.classList.remove("text-gray-600");
+      tabRiwayatBtn.classList.remove("text-blue-600", "border-blue-600");
+      tabRiwayatBtn.classList.add("text-gray-600");
+      // Render all barang if no search term
+      const searchTerm = searchBarang.value.trim().toLowerCase();
+      if (searchTerm) {
+        let matchedBarang = [];
+        data.forEach(kelompokData => {
+          kelompokData.barang.forEach(item => {
+            if (item.nama.toLowerCase().includes(searchTerm)) {
+              matchedBarang.push({...item, kelompok: kelompokData.kelompok});
+            }
+          });
+        });
+        renderTransaksi(matchedBarang);
+      } else {
+        // If no search term, show all barang grouped by kelompok
+        // Flatten all barang with kelompok info
+        let allBarang = [];
+        data.forEach(kelompokData => {
+          kelompokData.barang.forEach(item => {
+            allBarang.push({...item, kelompok: kelompokData.kelompok});
+          });
+        });
+        renderTransaksi(allBarang);
+      }
+      message.textContent = "";
+    });
+
+    tabRiwayatBtn.addEventListener("click", () => {
+      tabRiwayatBtn.classList.add("text-blue-600", "border-blue-600");
+      tabRiwayatBtn.classList.remove("text-gray-600");
+      tabTransaksiBtn.classList.remove("text-blue-600", "border-blue-600");
+      tabTransaksiBtn.classList.add("text-gray-600");
+      renderRiwayat(searchBarang.value.trim().toLowerCase());
+      message.textContent = "";
+    });
+
+    // Populate dropdown kelompok on page load
+    populateKelompok();
+
+    // Default to transaksi tab and show all barang
+    tabTransaksiBtn.click();
+
+    // AddKelompok modal handlers
+    addKelompokBtn.addEventListener("click", () => {
+      newKelompokName.value = "";
+      modalKelompok.classList.remove("hidden");
+    });
+
+    cancelKelompokBtn.addEventListener("click", () => {
+      modalKelompok.classList.add("hidden");
+    });
+
+    saveKelompokBtn.addEventListener("click", () => {
+      const newName = newKelompokName.value.trim();
+      if (!newName) {
+        alert("Nama kelompok tidak boleh kosong.");
+        return;
+      }
+      if (data.some(k => k.kelompok.toLowerCase() === newName.toLowerCase())) {
+        alert("Kelompok sudah ada.");
+        return;
+      }
+      data.push({ kelompok: newName, barang: [] });
+      populateKelompok();
+      modalKelompok.classList.add("hidden");
+      message.textContent = `Kelompok "${newName}" berhasil ditambahkan.`;
+      saveData();
+    });
+
+    // AddBarang modal handlers
+    addBarangBtn.addEventListener("click", () => {
+      newBarangName.value = "";
+      newBarangKelompok.value = "";
+      modalBarang.classList.remove("hidden");
+    });
+
+    cancelBarangBtn.addEventListener("click", () => {
+      modalBarang.classList.add("hidden");
+    });
+
+    saveBarangBtn.addEventListener("click", () => {
+      const newName = newBarangName.value.trim();
+      const kelompok = newBarangKelompok.value;
+      if (!newName) {
+        alert("Nama barang tidak boleh kosong.");
+        return;
+      }
+      if (!kelompok) {
+        alert("Pilih kelompok untuk barang baru.");
+        return;
+      }
+      const kelompokData = data.find(k => k.kelompok === kelompok);
+      if (!kelompokData) {
+        alert("Kelompok tidak ditemukan.");
+        return;
+      }
+      if (kelompokData.barang.some(b => b.nama.toLowerCase() === newName.toLowerCase())) {
+        alert("Barang sudah ada di kelompok ini.");
+        return;
+      }
+      kelompokData.barang.push({ id: nextBarangId++, nama: newName, saldo: 0 });
+      populateKelompok();
+      modalBarang.classList.add("hidden");
+      message.textContent = `Barang "${newName}" berhasil ditambahkan ke kelompok "${kelompok}".`;
+      saveData();
+      // Refresh transaksi tab if current kelompok matches
+      tabTransaksiBtn.click();
+    });
+  </script>
+</body>
+</html>
